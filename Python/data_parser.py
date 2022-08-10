@@ -5,10 +5,11 @@ from time import time
 
 # SQL setup
 SQL_SERVER_IP = ""
-SQL_SERVER_PORT = "1433"
-SQL_SERVER_DATABASE = "bazos"
+SQL_SERVER_PORT = ""
+SQL_SERVER_DATABASE = ""
 SQL_SERVER_USERID = ""
 SQL_SERVER_PASSWORD = ""
+SQL_CHUNK_SIZE = 10000
 
 def setup_sql():
     """Setup function that establishes connection to a remote database
@@ -39,14 +40,31 @@ def get_page_data():
     # Select the entire db with the newest batch first
     start_time = time()
     sql = "SELECT * FROM BazosData ORDER BY Batch ASC;"
-    temp_sql = "SELECT * FROM BazosData"
+    temp_sql = "SELECT TOP(1000) * FROM BazosData"
     i = 0
-    for chunk in pd.read_sql(sql, con, chunksize=10000):
+    df = pd.DataFrame()
+    for chunk in pd.read_sql(sql, con, chunksize=SQL_CHUNK_SIZE):
         print(f"Chunk id: {i}")
+        df = pd.concat([df, chunk])
         i += 1
+    df = df[df.Batch != -1]  # Fix one off row in sql db
+    df.reset_index(inplace=True)  # Fix index after filter
     print(f"db pull took {time() - start_time} seconds.")
+    # Describe df
+    print(df.head())
+    print(df.describe())
+    print(df.dtypes)
+    print(df.shape)
+    return df
 
+
+def process_data(df):
+    """
+    Write code here
+    """
+    pass
 
 if __name__ == '__main__':
     setup_sql()
-    get_page_data()
+    df = get_page_data()
+    process_data(df)
