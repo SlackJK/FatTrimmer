@@ -1,8 +1,12 @@
+import java.sql.SQLException;
+
 public class Main
 {
     public static ConfigParser CFG = new ConfigParser("C:\\Users\\qsiba\\IdeaProjects\\bazos\\target\\config.cfg");//temp path for dev
-    public static void main(String[] args)
+    private static SQLops SQL = new SQLops();
+    public static void main(String[] args) throws SQLException
     {
-
+        DataParser DP = new DataParser(SQL);
+        DP.ParsePageData();
     }
 }

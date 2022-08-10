@@ -6,6 +6,8 @@ public class SQLops
     String connectionUrl = Main.CFG.getProperty("connectionUrl");
     String SQLBazosDataTable = Main.CFG.getProperty("SQLBazosDataTable");
     String SQLBazosDataTableVarTypes= Main.CFG.getProperty("SQLBazosDataTableVarTypes");
+    String SQLFatTrimmerData = Main.CFG.getProperty("SQLFatTrimmerData");
+    String SQLFatTrimmerDataVarTypes= Main.CFG.getProperty("SQLFatTrimmerDataVarTypes");
     Connection con;
     public SQLops()
     {
@@ -18,6 +20,7 @@ public class SQLops
             try (Connection con = DriverManager.getConnection(connectionUrl))
             {
                 this.con = DriverManager.getConnection(connectionUrl);
+                CheckIfTableExists(SQLFatTrimmerData,SQLFatTrimmerDataVarTypes);
                 System.out.println("Connection Established.");
             }
         }
@@ -26,6 +29,12 @@ public class SQLops
             System.out.println("Connection Failed:");
             e.printStackTrace();
         }
+    }
+    private void CheckIfTableExists(String Table,String VarTypesIfDoesnt) throws SQLException
+    {
+        Statement statement = con.createStatement();
+        String testintializetablequery  = "IF NOT EXISTS(SELECT object_id, * FROM sys.objects WHERE type = 'U' AND name = '"+Table+"') CREATE TABLE "+Table+"( "+VarTypesIfDoesnt+" );";
+        statement.executeUpdate(testintializetablequery);
     }
     public String GetSQLContentsWithSearchConditionCommand(String InWhatTable, String WhereColumn, String EqualsWhat)//when inputting string in EqualsWhat you need to add '' around it.
     {
@@ -45,6 +54,26 @@ public class SQLops
             SQLRow.add(TurnMeIntoArrayList.getString(i));//todo might need to be set to object since not only varcahrs are used
         }
         return SQLRow;
+    }
+    public void InsertInto(String Table, ArrayList<Object> Values) throws SQLException
+    {
+        String QuestionMarks ="";
+        for (int i = 0; i < Values.size(); i++)
+        {
+            if(i!=Values.size()-1) {
+                QuestionMarks += "?,";
+            }
+            else{
+                QuestionMarks += "?";
+            }
+        }
+        String Insert = "INSERT INTO "+Table+" VALUES ("+QuestionMarks+");";
+        PreparedStatement st = con.prepareStatement(Insert);
+        for (int i = 1; i < Values.size()+1; i++)
+        {
+            st.setObject(i,Values.get(i-1));
+        }
+        st.executeUpdate();
     }
     /*
     Turns a sql row into an ArrayList
