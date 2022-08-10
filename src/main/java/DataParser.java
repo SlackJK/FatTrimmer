@@ -1,3 +1,5 @@
+import org.omg.CORBA.ARG_IN;
+
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -16,56 +18,57 @@ public class DataParser
         int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
                 "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
                 ,1).get(0));
-        for (int i = 0; i < MaxPage+1; i++)
-        {
-            LabelNew(i);
-        }
+        LabelNew(GetPageHistory());
     }
-    private void LabelNew(int Page) throws SQLException {
-        ArrayList<ArrayList<ArrayList<String>>> PageHistory = GetPageHistory(Page);
+    private void LabelNew(ArrayList<ArrayList<String>> HistoryOfPages) throws SQLException
+    {
         ArrayList<ArrayList<String>> Out = new ArrayList<>();
-        if(PageHistory.size()>1)
+        HistoryOfPages.remove(0);
+        System.out.println(HistoryOfPages.size());
+        for (int i = 0; i < HistoryOfPages.size(); i++)
         {
-            for (int i = 1; i < PageHistory.size(); i++) {
-                if(ContainsNew(PageHistory.get(i-1),PageHistory.get(i))>0)
-                {
-                    long CurrentTime = Timestamp.valueOf(PageHistory.get(i).get(0).get(8)).getTime();
-                    long PreviousTime = Timestamp.valueOf(PageHistory.get(i-1).get(0).get(8)).getTime();
-                    long DeltaTime = CurrentTime-PreviousTime;
-                    Out.add(new ArrayList<>(Arrays.asList("1",String.valueOf(Page),String.valueOf(DeltaTime))));//HasNewData,PageNumber,DeltaTime
-                }
-                else{
-                    long CurrentTime = Timestamp.valueOf(PageHistory.get(i).get(0).get(8)).getTime();
-                    long PreviousTime = Timestamp.valueOf(PageHistory.get(i-1).get(0).get(8)).getTime();
-                    long DeltaTime = CurrentTime-PreviousTime;
-                    Out.add(new ArrayList<>(Arrays.asList("0",String.valueOf(Page),String.valueOf(DeltaTime))));//HasNewData,PageNumber,DeltaTime
-                }
+            if(i%100==0)
+            {
+                System.out.println(HistoryOfPages.get(i));
+                System.out.println("Percentage complete: "+ (double) ((HistoryOfPages.size()*100/i)/100)+"%");
             }
+            long CurrentTime =Timestamp.valueOf(HistoryOfPages.get(i).get(8)).getTime();
+            String CurrentPage = HistoryOfPages.get(i).get(10);
+            ArrayList<ArrayList<String>> OnlyThesePages = new ArrayList<>(HistoryOfPages.subList(0,i).stream()
+                    .filter(element -> element.get(10).equals(CurrentPage))
+                    .collect(Collectors.toList()));
+            long PreviousTime = -1;
+            if(OnlyThesePages.size()>0)
+            {
+                PreviousTime = Timestamp.valueOf(OnlyThesePages.get(OnlyThesePages.size()-1).get(8)).getTime();
+            }
+            long DeltaTime = CurrentTime-PreviousTime;
+             if(isOld(HistoryOfPages,HistoryOfPages.get(i)))
+             {
+                 SQL.InsertInto(SQL.SQLFatTrimmerData,new ArrayList<>(Arrays.asList("0",CurrentPage,String.valueOf(DeltaTime))));
+             }
+             else{
+                 SQL.InsertInto(SQL.SQLFatTrimmerData,new ArrayList<>(Arrays.asList("1",CurrentPage,String.valueOf(DeltaTime))));
+             }
+
         }
         for (ArrayList DataRow:Out)
         {
             SQL.InsertInto(SQL.SQLFatTrimmerData,DataRow);
         }
+
     }
-    private ArrayList<ArrayList<ArrayList<String>>> GetPageHistory(int ForWhichPage) throws SQLException
+    private ArrayList<ArrayList<String>> GetPageHistory() throws SQLException
     {
-        ArrayList<ArrayList<String>> History = SQL.ResultSetTo2dArrayList(SQL.ExecuteQuery(
-                SQL.GetSQLContentsWithSearchConditionCommand(
-                SQL.SQLBazosDataTable,"Page",ForWhichPage+" ORDER BY TimeOfRun ASC")),
+        return SQL.ResultSetTo2dArrayList(SQL.ExecuteQuery("SELECT * FROM "+SQL.SQLBazosDataTable+" ORDER BY Batch ASC;"),
                 SQL.SQLBazosDataTableVarTypes.split(",").length);
-        LinkedHashSet<Long> Batches = new LinkedHashSet<>();
-        History.forEach(element -> Batches.add(Long.valueOf(element.get(9))));
-        ArrayList<ArrayList<ArrayList<String>>> Out = new ArrayList<>();
-        for (Long Batch:Batches)
-        {
-               Out.add(new ArrayList<>(History.stream().filter(Listing -> Long.parseLong(Listing.get(9)) == Batch)
-                       .collect(Collectors.toList())));
-        }
-        return Out;
+
     }
-    private int ContainsNew(ArrayList<ArrayList<String>> PreviousPage, ArrayList<ArrayList<String>> CurrentPage)//returns number of new listings on the page
+    private boolean isOld(ArrayList<ArrayList<String>> TotalData, ArrayList<String> CurrentData)//returns number of new listings on the page
     {
-        CurrentPage.removeAll(PreviousPage);
-        return CurrentPage.size();
+        return TotalData.stream().anyMatch(Listing ->
+                Listing.get(0).equals(CurrentData.get(0))
+                && Listing.get(1).equals(CurrentData.get(1))
+                && Listing.get(3).equals(CurrentData.get(3)));
     }
 }
