@@ -98,10 +98,19 @@ public class SQLops
     public ArrayList<ArrayList<String>> ResultSetTo2dArrayList(ResultSet TurnAllOfMeInto2dArrayList, int ResultSetCollumnCount) throws SQLException
     {
         ArrayList<ArrayList<String>> Out2dArrayList= new ArrayList<ArrayList<String>>();
+        System.out.println("Converting");
+        int i = 0;
+        System.out.println(TurnAllOfMeInto2dArrayList.getFetchSize());
         while (TurnAllOfMeInto2dArrayList.next())
         {
+            if(i%100000==0 && i!=0)
+            {
+                System.out.println("Rows Converted:"+i);
+            }
             Out2dArrayList.add(resultSetRowToArrayList(TurnAllOfMeInto2dArrayList,ResultSetCollumnCount));
+            i = i +1;
         }
+        System.out.println("Finished conversion");
         return Out2dArrayList;
     }
 }
