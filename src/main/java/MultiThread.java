@@ -1,32 +1,30 @@
-import javax.xml.crypto.Data;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class MultiThread extends Thread
 {
         private String InTask;
         private Thread t;
-        private SQLops SQL;
-        private DataParser DP;
-        private ArrayList<ArrayList<String>> HistoryOfPages;
-        public MultiThread(String Task, SQLops SQL, ArrayList<ArrayList<String>> HistoryOfPages)
+        private int CurrentPage;
+        private int CurrentDepth;
+        private ArrayList<String> Offender;
+        private ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory;
+        public MultiThread(String Task,int CurrentPage,int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory)
         {
-            InTask = Task;
-            this.SQL = SQL;
-            DP = new DataParser(SQL);
-            this.HistoryOfPages = HistoryOfPages;
-            System.out.println("Initializing...");
+            this.InTask = Task;
+            this.CurrentPage = CurrentPage;
+            this.CurrentDepth = CurrentDepth;
+            this.Offender = Offender;
+            this.AggregateHistory = AggregateHistory;
         }
         public void run()
         {
-            String[] Task = InTask.split(",");
-            for (int i = Integer.parseInt(Task[0]); i < Integer.parseInt(Task[1]); i++)
+            if(InTask.contains("L"))
             {
-                try {
-                    DP.Parser(i,HistoryOfPages);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
+
+            }
+            if(InTask.contains("R"));
+            {
+
             }
         }
         public void start()
