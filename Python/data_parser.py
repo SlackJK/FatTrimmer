@@ -1,14 +1,12 @@
 import pandas as pd
 import pyodbc
 from time import time
+from json import load
 
 
 # SQL setup
-SQL_SERVER_IP = ""
-SQL_SERVER_PORT = ""
-SQL_SERVER_DATABASE = ""
-SQL_SERVER_USERID = ""
-SQL_SERVER_PASSWORD = ""
+with open(r"Python\sql_config.json") as f:
+    SQL_CONFIG = load(f)
 SQL_CHUNK_SIZE = 10000
 
 def setup_sql():
@@ -20,10 +18,10 @@ def setup_sql():
     global con, cur
     con = pyodbc.connect(
         "Driver={SQL Server Native Client 11.0};"
-        f"Server={SQL_SERVER_IP},{SQL_SERVER_PORT};"
-        f"Database={SQL_SERVER_DATABASE};"
-        f"UID={SQL_SERVER_USERID};"
-        f"PWD={SQL_SERVER_PASSWORD}"
+        f"Server={SQL_CONFIG['ip']},{SQL_CONFIG['port']};"
+        f"Database={SQL_CONFIG['database']};"
+        f"UID={SQL_CONFIG['uid']};"
+        f"PWD={SQL_CONFIG['password']}"
     )
     cur = con.cursor()
 
@@ -62,9 +60,20 @@ def process_data(df):
     """
     Write code here
     """
-    pass
+    start_time = time()
+    # df["IsDuplicate"] = 
+    # use df.pipe and df.eq?
+    print(f"anal took {time() - start_time} seconds.")
+
+
+
+# To find where scrapes end, iterate over and keep track of largest page, when all pages up to that are covered: consider that the end.
 
 if __name__ == '__main__':
     setup_sql()
-    df = get_page_data()
+    # df = get_page_data()
+    # df.to_csv(r"BazosData.csv")
+    print("reading csv..")
+    df = pd.read_csv(r"BazosData.csv")
+    print("done")
     process_data(df)
