@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,25 +23,42 @@ public class DataParser
     {
         this.SQL = SQL;
     }
-    public void ParsePageData() throws SQLException {
-        int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
-                "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
-                ,1).get(0));
-        //LabelNew(GetPageHistory());
-    }
-    private void tempname(ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory)
+
+    public void RunParse() throws SQLException, ExecutionException, InterruptedException, TimeoutException
     {
+        ParsePageData(AggregateHistories());
+    }
+    private void ParsePageData(ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory) throws ExecutionException, InterruptedException, TimeoutException, SQLException {
+        ArrayList<ArrayList<String>> SQLPush = new ArrayList<>();
+        System.out.println("Parsing...");
         for (int i = 0; i < AggregateHistory.size(); i++)
         {
+            System.out.println("Page:"+i);
             if (AggregateHistory.get(i).size() > 1)
             {
-                for (int j = 1; j < AggregateHistory.get(i).size(); j++)
+                for (int j = 1; j < AggregateHistory.get(i).size()-1; j++)
                 {
+                    System.out.println("Time:"+j);
                     ArrayList<String> Offender = ContainsChanges(
                             new ArrayList<>(),AggregateHistory.get(i).get(j),AggregateHistory.get(i).get(j-1));
+                    long CurrentTime = Timestamp.valueOf(AggregateHistory.get(i).get(j).get(0).get(8)).getTime();
+                    long PreviousTime = Timestamp.valueOf(AggregateHistory.get(i).get(j-1).get(0).get(8)).getTime();
+                    long DeltaTime = CurrentTime-PreviousTime;
+                    String Batch = AggregateHistory.get(i).get(j).get(0).get(9);
                     while(Offender.size()>0)
                     {
-
+                        if(SearchLeftandRight(i,j,Offender,AggregateHistory) == false)
+                        {
+                            System.out.println("New item found!! Batch:" + Batch);
+                            SQL.InsertInto(SQL.SQLFatTrimmerData,new ArrayList<>(Arrays.asList("1",i,DeltaTime,Batch)));
+                            break;
+                        }
+                        Offender = ContainsChanges(
+                            Offender,AggregateHistory.get(i).get(j),AggregateHistory.get(i).get(j-1));
+                    }
+                    if(Offender.size()<1){
+                        System.out.println("Old item found. Batch:" +Batch);
+                        SQL.InsertInto(SQL.SQLFatTrimmerData, new ArrayList<>(Arrays.asList("0",i,DeltaTime,Batch)));
                     }
                 }
             }
@@ -54,12 +72,20 @@ public class DataParser
         {
             if (L.isDone()){
                 Out = (boolean) L.get(1, TimeUnit.SECONDS);
-                R.cancel(true);
-                break;
+                if(Out){
+                    R.cancel(true);
+                    break;
+                }
             }
             if (R.isDone()){
                 Out = (boolean) R.get(1, TimeUnit.SECONDS);
-                L.cancel(true);
+                if(Out){
+                    L.cancel(true);
+                    break;
+                }
+            }
+            if(L.isDone() && R.isDone())
+            {
                 break;
             }
         }
@@ -129,17 +155,20 @@ public class DataParser
         int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
                         "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
                 ,1).get(0));
+        MaxPage = 10;//temp
         ArrayList<ArrayList<ArrayList<ArrayList<String>>>> Out = new ArrayList<>();
+        System.out.println("Aggregating History:");
         for (int i = 0; i < MaxPage; i++)
         {
             Out.add(GetPageHistory(i));
+            System.out.println("Page:"+i);
         }
         return Out;
     }
     private ArrayList<String> ContainsChanges(ArrayList<String> StartIterator, ArrayList<ArrayList<String>> Current, ArrayList<ArrayList<String>> Previous)
     {
         if(StartIterator.size()>0)
-            Current = (ArrayList<ArrayList<String>>) Current.subList(Current.indexOf(StartIterator),Current.size());
+            Current = new ArrayList<>(Current.subList(Current.indexOf(StartIterator),Current.size()));
 
         for (int i = 0; i<Current.size(); i++)
         {
