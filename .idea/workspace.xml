@@ -6,11 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="37b673f0-4fb7-4245-86f9-9961d6b1031d" name="Changes" comment="Dev commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Python/FatTrimmerModels/FatTrimmerModel0.h5" beforeDir="false" afterPath="$PROJECT_DIR$/Python/FatTrimmerModels/FatTrimmerModel0.h5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Python/TrainLogs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Python/TrainLogs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Python/ai.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Python/ai.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/DataParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/DataParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,6 +68,7 @@
       <workItem from="1660250157498" duration="3981000" />
       <workItem from="1660327048696" duration="1126000" />
       <workItem from="1660398430595" duration="16905000" />
+      <workItem from="1660480156791" duration="4366000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1660090853820</created>

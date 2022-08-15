@@ -155,7 +155,7 @@ public class DataParser
         int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
                         "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
                 ,1).get(0));
-        MaxPage = 10;//temp
+        MaxPage = 1600;//temp
         ArrayList<ArrayList<ArrayList<ArrayList<String>>>> Out = new ArrayList<>();
         System.out.println("Aggregating History:");
         for (int i = 0; i < MaxPage; i++)
