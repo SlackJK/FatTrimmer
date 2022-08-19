@@ -1,10 +1,17 @@
 import org.omg.CORBA.ARG_IN;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 public class DataParser
@@ -16,68 +23,163 @@ public class DataParser
     {
         this.SQL = SQL;
     }
-    public void ParsePageData() throws SQLException {
-        int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
-                "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
-                ,1).get(0));
-        LabelNew(GetPageHistory());
-    }
-    private void LabelNew(ArrayList<ArrayList<String>> HistoryOfPages) throws SQLException
-    {
-        ArrayList<ArrayList<String>> Out = new ArrayList<>();
-        HistoryOfPages.remove(0);
-        System.out.println("Got data");
-        int PageCount = HistoryOfPages.size();
-        System.out.println(PageCount);
-        int PagesPerThread = PageCount/ThreadCount;
-        int Remainder = PageCount%ThreadCount;
-        ArrayList<String> Task = CreateScrapeTask(PagesPerThread,Remainder,PageCount);
-        ArrayList<MultiThread> Threads = new ArrayList<>();
-        for (int i = 0; i < Task.size(); i++)
-        {
-            Threads.add(new MultiThread(Task.get(i),SQL,HistoryOfPages));
-        }
-        for (int i = 0; i < Threads.size(); i++)
-        {
-            Threads.get(i).start();
-        }
-    }
-    public void Parser(int i,ArrayList<ArrayList<String>> HistoryOfPages) throws SQLException {
-        if(i%100==0 && i!=0)
-        {
-            System.out.println(HistoryOfPages.get(i));
-            //System.out.println("Listings parsed:"+i+"\nPercentage complete: "+  ((i/(double)HistoryOfPages.size())*100+"%"));
-        }
-        long CurrentTime =Timestamp.valueOf(HistoryOfPages.get(i).get(8)).getTime();
-        String CurrentPage = HistoryOfPages.get(i).get(10);
-        String CurrentBatch = HistoryOfPages.get(i).get(9);
-        ArrayList<ArrayList<String>> OnlyThesePages = new ArrayList<>(HistoryOfPages.subList(0,i).stream()
-                .filter(element -> element.get(10).equals(CurrentPage) && !element.get(9).equals(CurrentBatch))
-                .collect(Collectors.toList()));
-        long PreviousTime = -1;
-        if(OnlyThesePages.size()>0)
-        {
-            PreviousTime = Timestamp.valueOf(OnlyThesePages.get(OnlyThesePages.size()-1).get(8)).getTime();
-        }
-        long DeltaTime = CurrentTime-PreviousTime;
-        if(PreviousTime ==-1){
-            DeltaTime = -1;
-        }
 
-        if(isOld(HistoryOfPages,HistoryOfPages.get(i),i))
+    public void RunParse() throws SQLException, ExecutionException, InterruptedException, TimeoutException
+    {
+        ParsePageData(AggregateHistories());
+    }
+    private void ParsePageData(ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory) throws ExecutionException, InterruptedException, TimeoutException, SQLException {
+        ArrayList<ArrayList<String>> SQLPush = new ArrayList<>();
+        System.out.println("Parsing...");
+        for (int i = 0; i < AggregateHistory.size(); i++)
         {
-            SQL.InsertInto(SQL.SQLFatTrimmerData,new ArrayList<>(Arrays.asList("0",CurrentPage,String.valueOf(DeltaTime))));
-        }
-        else{
-            SQL.InsertInto(SQL.SQLFatTrimmerData,new ArrayList<>(Arrays.asList("1",CurrentPage,String.valueOf(DeltaTime))));
+            System.out.println("Page:"+i);
+            if (AggregateHistory.get(i).size() > 1)
+            {
+                for (int j = 1; j < AggregateHistory.get(i).size()-1; j++)
+                {
+                    System.out.println("Time:"+j);
+                    ArrayList<String> Offender = ContainsChanges(
+                            new ArrayList<>(),AggregateHistory.get(i).get(j),AggregateHistory.get(i).get(j-1));
+                    long CurrentTime = Timestamp.valueOf(AggregateHistory.get(i).get(j).get(0).get(8)).getTime();
+                    long PreviousTime = Timestamp.valueOf(AggregateHistory.get(i).get(j-1).get(0).get(8)).getTime();
+                    long DeltaTime = CurrentTime-PreviousTime;
+                    String Batch = AggregateHistory.get(i).get(j).get(0).get(9);
+                    while(Offender.size()>0)
+                    {
+                        if(SearchLeftandRight(i,j,Offender,AggregateHistory) == false)
+                        {
+                            System.out.println("New item found!! Batch:" + Batch);
+                            SQL.InsertInto(SQL.SQLFatTrimmerData,new ArrayList<>(Arrays.asList("1",i,DeltaTime,Batch)));
+                            break;
+                        }
+                        Offender = ContainsChanges(
+                            Offender,AggregateHistory.get(i).get(j),AggregateHistory.get(i).get(j-1));
+                    }
+                    if(Offender.size()<1){
+                        System.out.println("Old item found. Batch:" +Batch);
+                        SQL.InsertInto(SQL.SQLFatTrimmerData, new ArrayList<>(Arrays.asList("0",i,DeltaTime,Batch)));
+                    }
+                }
+            }
         }
     }
-    private ArrayList<ArrayList<String>> GetPageHistory() throws SQLException
+    private boolean SearchLeftandRight(int CurrentPage , int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory) throws ExecutionException, InterruptedException, TimeoutException {
+        boolean Out = false;
+        CompletableFuture L = CompletableFuture.supplyAsync(()-> (SearchLeft(CurrentPage,CurrentDepth,Offender,AggregateHistory)));
+        CompletableFuture R = CompletableFuture.supplyAsync(()-> (SearchRight(CurrentPage,CurrentDepth,Offender,AggregateHistory)));
+        while(Out == false)
+        {
+            if (L.isDone()){
+                Out = (boolean) L.get(1, TimeUnit.SECONDS);
+                if(Out){
+                    R.cancel(true);
+                    break;
+                }
+            }
+            if (R.isDone()){
+                Out = (boolean) R.get(1, TimeUnit.SECONDS);
+                if(Out){
+                    L.cancel(true);
+                    break;
+                }
+            }
+            if(L.isDone() && R.isDone())
+            {
+                break;
+            }
+        }
+        return Out;
+    }
+    boolean SearchLeft(int CurrentPage,int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory)
     {
-        System.out.println("Getting data");
-        return SQL.ResultSetTo2dArrayList(SQL.ExecuteQuery("SELECT * FROM "+SQL.SQLBazosDataTable+" ORDER BY Batch ASC;"),
+        while((CurrentPage-1)>-1)
+        {
+            if(ContainsItem(Offender,AggregateHistory.get(CurrentPage-1).get(CurrentDepth)))
+                return true;
+            CurrentPage = CurrentPage -1;
+        }
+        return false;
+    }
+    public boolean SearchRight(int CurrentPage ,int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory)
+    {
+        while((CurrentPage+1)<AggregateHistory.size())
+        {
+            if(ContainsItem(Offender,AggregateHistory.get(CurrentPage+1).get(CurrentDepth)))
+                return true;
+            CurrentPage = CurrentPage +1;
+        }
+        return false;
+    }
+
+    private boolean ContainsItem(ArrayList<String> Offender,ArrayList<ArrayList<String>> TestPage)
+    {
+        for (ArrayList<String> TestListing:TestPage)
+        {
+            if(Offender.get(0).equals(TestListing.get(0)) &&
+                    Offender.get(1).equals(TestListing.get(1)) &&
+                    Offender.get(3).equals(TestListing.get(3)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    private ArrayList<ArrayList<ArrayList<String>>> GetPageHistory(int Page) throws SQLException
+    {
+        ArrayList<ArrayList<String>> InputSQL = GetPage(Page);
+        LinkedHashSet<Integer> Batches = UniqueBatches(InputSQL);
+        ArrayList<ArrayList<ArrayList<String>>> Out = new ArrayList<>();
+        for (Integer Batch:Batches)
+        {
+            Out.add(new ArrayList<>(InputSQL.stream().filter(Listing -> Integer.parseInt(Listing.get(9)) == Batch)
+                    .collect(Collectors.toList())));
+        }
+        return Out;
+    }
+    private LinkedHashSet<Integer> UniqueBatches(ArrayList<ArrayList<String>> InputData)
+    {
+        LinkedHashSet<Integer> Out = new LinkedHashSet<>();
+        InputData.forEach(element -> Out.add(Integer.valueOf(element.get(9))));
+        return Out;
+    }
+    private ArrayList<ArrayList<String>> GetPage(int Page) throws SQLException
+    {
+        return SQL.ResultSetTo2dArrayList(
+                SQL.ExecuteQuery(
+                        SQL.GetSQLContentsWithSearchConditionCommand(
+                                SQL.SQLBazosDataTable, "Page",Page+" ORDER BY TimeOfRun ASC")),
                 SQL.SQLBazosDataTableVarTypes.split(",").length);
+    }
+    private ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistories() throws SQLException {
+        int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
+                        "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
+                ,1).get(0));
+        MaxPage = 1600;//temp
+        ArrayList<ArrayList<ArrayList<ArrayList<String>>>> Out = new ArrayList<>();
+        System.out.println("Aggregating History:");
+        for (int i = 0; i < MaxPage; i++)
+        {
+            Out.add(GetPageHistory(i));
+            System.out.println("Page:"+i);
+        }
+        return Out;
+    }
+    private ArrayList<String> ContainsChanges(ArrayList<String> StartIterator, ArrayList<ArrayList<String>> Current, ArrayList<ArrayList<String>> Previous)
+    {
+        if(StartIterator.size()>0)
+            Current = new ArrayList<>(Current.subList(Current.indexOf(StartIterator),Current.size()));
 
+        for (int i = 0; i<Current.size(); i++)
+        {
+            ArrayList<String> CListing = Current.get(i);
+            int Matching = Previous.stream().filter(PListing-> CListing.get(0).equals(PListing.get(0))
+                    && CListing.get(1).equals(PListing.get(1))
+                    && CListing.get(3).equals(PListing.get(3))).collect(Collectors.toList()).size();
+            if(Matching<1)
+                return CListing;
+        }
+        return new ArrayList<>();
     }
     private boolean isOld(ArrayList<ArrayList<String>> TotalData, ArrayList<String> CurrentData,int currentIndex)//returns number of new listings on the page
     {
