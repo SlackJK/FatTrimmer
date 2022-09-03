@@ -1,5 +1,3 @@
-import sys
-
 import pandas as pd
 import pyodbc
 from time import time
@@ -65,16 +63,20 @@ def process_data(df):
     print("Processing data...")
     start_time = time()
     # use df.pipe and df.eq?
+    output = pd.DataFrame(columns=["Page", "DeltaTime"])
     duplicates = set()
-    for index, row in df.iterrows():
-        # duplicates.add(pd.util.hash_pandas_object(row[["Title", "Description", "Price"]]))
-        if row["Title"] not in duplicates:
-            pass
-            duplicates.add(row["Title"])
+    for index, listing in df.iterrows():
+        # if the title is unique
+        if listing["Title"] not in duplicates:
+            # TODO takes too long, add progress counter
+            batch, page = listing["Batch"], listing["Page"]
+            bazos_page = df[df["Page"] == page]
+            output = output.append(pd.Series([page, 1000]), ignore_index=True)
+            duplicates.add(listing["Title"])
     print(f"anal took {round((time() - start_time), 2)} seconds.")
     # print(f"the duplicates set has {len(duplicates)} elements")
     # print(f"it takes {sys.getsizeof(duplicates)} bytes of memory")
-
+    return output
 
 
 # To find where scrapes end, iterate over and keep track of largest page, when all pages up to that are covered: consider that the end.
@@ -94,4 +96,4 @@ if __name__ == '__main__':
     # df["PostTime"] = pd.to_datetime(df["PostTime"], format=r"[%d.%m. %Y]")  # TODO hash to reduce complexity
     print(f"reading csv took {round((time()-start_time), 2)} seconds")
     print(df.head())
-    process_data(df)
+    print(process_data(df))
