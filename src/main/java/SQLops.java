@@ -6,6 +6,7 @@ public class SQLops
     String connectionUrl = Main.CFG.getProperty("connectionUrl");
     String SQLBazosDataTable = Main.CFG.getProperty("SQLBazosDataTable");
     String SQLBazosDataTableVarTypes= Main.CFG.getProperty("SQLBazosDataTableVarTypes");
+    String SQLBazosDataTableVars = Main.CFG.getProperty("String SQLBazosDataTableVars");
     String SQLFatTrimmerData = Main.CFG.getProperty("SQLFatTrimmerData");
     String SQLFatTrimmerDataVarTypes= Main.CFG.getProperty("SQLFatTrimmerDataVarTypes");
     Connection con;
@@ -112,5 +113,26 @@ public class SQLops
         }
         System.out.println("Finished conversion");
         return Out2dArrayList;
+    }
+    public boolean AlreadyExists(ArrayList<String> Offender) {
+        try {
+            ArrayList<ArrayList<String>> Out;
+            String statement = "SELECT TOP(2) "+SQLBazosDataTableVars+" FROM "+SQLBazosDataTable+" WHERE Title =? AND Price=? AND Description=? AND Batch<? ;";
+            PreparedStatement PS = con.prepareStatement(statement);
+            PS.setString(1,Offender.get(0));
+            PS.setString(2,Offender.get(1));
+            PS.setString(3,Offender.get(3));
+            PS.setString(4,Offender.get(9));
+            Out=ResultSetTo2dArrayList(PS.executeQuery(),SQLBazosDataTableVarTypes.split(",").length);
+            if(Out.size()>0)
+                return true;
+            return false;
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+            AlreadyExists(Offender);
+        }
+        return false;
     }
 }

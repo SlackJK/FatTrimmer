@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="FatTrimmer:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/FatTrimmer_jar</output-path>
+    <root id="archive" name="FatTrimmer.jar">
+      <element id="module-output" name="FatTrimmer" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

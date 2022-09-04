@@ -74,14 +74,14 @@ public class DataParser
                 Out = (boolean) L.get(1, TimeUnit.SECONDS);
                 if(Out){
                     R.cancel(true);
-                    break;
+                    return Out;
                 }
             }
             if (R.isDone()){
                 Out = (boolean) R.get(1, TimeUnit.SECONDS);
                 if(Out){
                     L.cancel(true);
-                    break;
+                    return Out;
                 }
             }
             if(L.isDone() && R.isDone())
@@ -91,24 +91,49 @@ public class DataParser
         }
         return Out;
     }
-    boolean SearchLeft(int CurrentPage,int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory)
-    {
-        while((CurrentPage-1)>-1)
+    boolean SearchLeft(int CurrentPage,int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory){
+        int i = 0;
+        int lessThen = 25;
+        while((CurrentPage-1)>-1 && i< lessThen)
         {
-            if(ContainsItem(Offender,AggregateHistory.get(CurrentPage-1).get(CurrentDepth)))
-                return true;
+            if(CurrentDepth<AggregateHistory.get(CurrentPage-1).size()) {
+                if (ContainsItem(Offender, AggregateHistory.get(CurrentPage - 1).get(CurrentDepth)))
+                    return true;
+            }
+            else {
+                return false;
+            }
             CurrentPage = CurrentPage -1;
+            i = i + 1;
         }
+        if(SQL.AlreadyExists(Offender))
+            return true;
         return false;
     }
     public boolean SearchRight(int CurrentPage ,int CurrentDepth, ArrayList<String> Offender, ArrayList<ArrayList<ArrayList<ArrayList<String>>>> AggregateHistory)
     {
-        while((CurrentPage+1)<AggregateHistory.size())
+        int i = 0;
+        int lessThen = 25;
+        while((CurrentPage+1)<AggregateHistory.size() && i<lessThen)
         {
-            if(ContainsItem(Offender,AggregateHistory.get(CurrentPage+1).get(CurrentDepth)))
-                return true;
+            if(CurrentDepth<AggregateHistory.get(CurrentPage+1).size()) {
+                if (ContainsItem(Offender, AggregateHistory.get(CurrentPage + 1).get(CurrentDepth)))
+                    return true;
+            }
+            else{
+                return false;
+            }
             CurrentPage = CurrentPage +1;
+            i = i + 1;
         }
+        /*
+        if(i==25)
+        {
+            if(SQL.AlreadyExists(Offender))
+                return true;
+        }
+
+         */
         return false;
     }
 
@@ -155,7 +180,7 @@ public class DataParser
         int MaxPage = Integer.parseInt(SQL.ResultSetRowToArrayList(SQL.ExecuteQuery(
                         "SELECT MAX(Page) AS MaximumPage FROM "+ SQL.SQLBazosDataTable+";")
                 ,1).get(0));
-        MaxPage = 1600;//temp
+        MaxPage = 10;//temp
         ArrayList<ArrayList<ArrayList<ArrayList<String>>>> Out = new ArrayList<>();
         System.out.println("Aggregating History:");
         for (int i = 0; i < MaxPage; i++)
