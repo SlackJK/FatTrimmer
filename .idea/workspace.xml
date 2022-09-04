@@ -9,14 +9,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="37b673f0-4fb7-4245-86f9-9961d6b1031d" name="Changes" comment="debug">
-      <change afterPath="$PROJECT_DIR$/.idea/artifacts/FatTrimmer_jar.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="37b673f0-4fb7-4245-86f9-9961d6b1031d" name="Changes" comment="dev commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/DataParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/DataParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/SQLops.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLops.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python/ai.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Python/ai.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,7 +27,6 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -93,7 +87,8 @@
       <workItem from="1661006030033" duration="678000" />
       <workItem from="1661189270939" duration="298000" />
       <workItem from="1661512249853" duration="26000" />
-      <workItem from="1662206506022" duration="17401000" />
+      <workItem from="1662206506022" duration="18733000" />
+      <workItem from="1662304978241" duration="13000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1660090853820</created>
@@ -165,7 +160,14 @@
       <option name="project" value="LOCAL" />
       <updated>1660568033733</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="dev commit">
+      <created>1662294102090</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1662294102090</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,7 +194,8 @@
     <MESSAGE value="Struggle" />
     <MESSAGE value="Dev commit" />
     <MESSAGE value="debug" />
-    <option name="LAST_COMMIT_MESSAGE" value="debug" />
+    <MESSAGE value="dev commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="dev commit" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
