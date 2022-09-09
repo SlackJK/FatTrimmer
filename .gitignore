@@ -38,6 +38,6 @@ build/
 .DS_Store
 
 
-/Python/sql_config.json
+./Python/sql_config.json
 BazosData.csv
 BazosData100000.csv
