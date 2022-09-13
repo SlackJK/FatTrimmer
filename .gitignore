@@ -42,3 +42,4 @@ build/
 BazosData.csv
 BazosData100000.csv
 Python/sql-config.json
+Python/anal/fat_trimmer_data.csv
