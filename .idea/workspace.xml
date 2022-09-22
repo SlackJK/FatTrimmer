@@ -10,6 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37b673f0-4fb7-4245-86f9-9961d6b1031d" name="Changes" comment="per element progress">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Python/anal/past_delta.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Python/anal/past_delta.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -87,6 +88,8 @@
       <workItem from="1662994172927" duration="113000" />
       <workItem from="1663011669163" duration="16000" />
       <workItem from="1663062583183" duration="30000" />
+      <workItem from="1663141000328" duration="430000" />
+      <workItem from="1663524935083" duration="9000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1660090853820</created>
